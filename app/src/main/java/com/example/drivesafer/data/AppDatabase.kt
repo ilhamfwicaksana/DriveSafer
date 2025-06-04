@@ -75,8 +75,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "drivesafer_database"
                 )
-                    //.fallbackToDestructiveMigration() <- It's removed
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .fallbackToDestructiveMigration() // ADD THIS as safety net
                     .build()
                 INSTANCE = instance
                 instance

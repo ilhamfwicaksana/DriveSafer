@@ -15,11 +15,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.drivesafer.viewmodel.HistoryViewModel
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
-import com.patrykandpatrick.vico.core.entry.entryModelOf
+//import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+//import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+//import com.patrykandpatrick.vico.compose.chart.Chart
+//import com.patrykandpatrick.vico.compose.chart.column.columnChart
+//import com.patrykandpatrick.vico.core.entry.entryModelOf
+import androidx.compose.foundation.background
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -244,29 +246,40 @@ fun ViolationsBarChartSection(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
+//            if (totalViolations > 0) {
+//                // Create chart data
+//                val chartEntryModel = entryModelOf(
+//                    0 to accelerations.toFloat(),
+//                    1 to braking.toFloat(),
+//                    2 to turning.toFloat(),
+//                    3 to speeding.toFloat(),
+//                    4 to noise.toFloat()
+//                )
+//
+//                Chart(
+//                    chart = columnChart(),
+//                    model = chartEntryModel,
+//                    startAxis = rememberStartAxis(),
+//                    bottomAxis = rememberBottomAxis(),
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(200.dp)
+//                )
+//
+//                // Legend
+//                Spacer(modifier = Modifier.height(16.dp))
+//
+//                ViolationLegend()
             if (totalViolations > 0) {
-                // Create chart data
-                val chartEntryModel = entryModelOf(
-                    0 to accelerations.toFloat(),
-                    1 to braking.toFloat(),
-                    2 to turning.toFloat(),
-                    3 to speeding.toFloat(),
-                    4 to noise.toFloat()
+                SimpleViolationChart(
+                    accelerations = accelerations,
+                    braking = braking,
+                    turning = turning,
+                    speeding = speeding,
+                    noise = noise
                 )
 
-                Chart(
-                    chart = columnChart(),
-                    model = chartEntryModel,
-                    startAxis = rememberStartAxis(),
-                    bottomAxis = rememberBottomAxis(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                )
-
-                // Legend
                 Spacer(modifier = Modifier.height(16.dp))
-
                 ViolationLegend()
 
             } else {
@@ -557,5 +570,94 @@ private fun formatDuration(durationMs: Long): String {
         hours > 0 -> "${hours}h ${minutes}m"
         minutes > 0 -> "${minutes}m"
         else -> "<1m"
+    }
+}
+
+@Composable
+fun SimpleViolationChart(
+    accelerations: Int,
+    braking: Int,
+    turning: Int,
+    speeding: Int,
+    noise: Int
+) {
+    val violations = listOf(
+        "Acceleration" to accelerations to Color(0xFF2196F3),
+        "Braking" to braking to Color(0xFFF44336),
+        "Turning" to turning to Color(0xFF4CAF50),
+        "Speeding" to speeding to Color(0xFFFF9800),
+        "Noise" to noise to Color(0xFF9C27B0)
+    )
+
+    val maxValue = violations.maxOfOrNull { it.first.second } ?: 1
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        violations.forEach { (labelValue, color) ->
+            val (label, value) = labelValue
+            ViolationBar(
+                label = label,
+                value = value,
+                maxValue = maxValue,
+                color = color
+            )
+        }
+    }
+}
+
+@Composable
+fun ViolationBar(
+    label: String,
+    value: Int,
+    maxValue: Int,
+    color: Color
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        if (maxValue > 0) {
+            val progress = value.toFloat() / maxValue.toFloat()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .background(
+                        Color.LightGray.copy(alpha = 0.3f),
+                        RoundedCornerShape(6.dp)
+                    )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progress)
+                        .background(color, RoundedCornerShape(6.dp))
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
