@@ -689,13 +689,29 @@ class TrackRideViewModel(application: Application) : AndroidViewModel(applicatio
             // Background thread untuk noise monitoring
             noiseDetectionThread = Thread {
                 val buffer = ShortArray(BUFFER_SIZE)
-                while (isRecording && _isTracking.value) {
-                    val readResult = audioRecord?.read(buffer, 0, BUFFER_SIZE) ?: 0
-                    if (readResult > 0) {
-                        val noiseLevel = calculateDecibels(buffer)
-                        checkNoiseViolation(noiseLevel)
+                try {
+                    while (isRecording && _isTracking.value && !Thread.currentThread().isInterrupted) {
+                        try {
+                            val readResult = audioRecord?.read(buffer, 0, BUFFER_SIZE) ?: 0
+                            if (readResult > 0) {
+                                val noiseLevel = calculateDecibels(buffer)
+                                checkNoiseViolation(noiseLevel)
+                            }
+                            Thread.sleep(500)
+                        } catch (e: InterruptedException) {
+                            // Thread interrupted, exit gracefully
+                            break
+                        } catch (e: Exception) {
+                            // Handle other exceptions (audio recording errors)
+                            android.util.Log.e("NoiseDetection", "Error in noise detection: ${e.message}")
+                            break
+                        }
                     }
-                    Thread.sleep(500) // Check every 500ms
+                } catch (e: Exception) {
+                    android.util.Log.e("NoiseDetection", "Fatal error in noise detection thread: ${e.message}")
+                } finally {
+                    // Cleanup resources
+                    isRecording = false
                 }
             }
             noiseDetectionThread?.start()
@@ -712,12 +728,25 @@ class TrackRideViewModel(application: Application) : AndroidViewModel(applicatio
     private fun stopNoiseDetection() {
         isRecording = false
 
-        // ✅ ADD: Proper thread cleanup
-        noiseDetectionThread?.interrupt()
+        // Graceful thread termination
+        noiseDetectionThread?.let { thread ->
+            thread.interrupt()
+            try {
+                // Wait for thread to finish (max 1 second)
+                thread.join(1000)
+            } catch (e: InterruptedException) {
+                android.util.Log.w("NoiseDetection", "Thread join interrupted")
+            }
+        }
         noiseDetectionThread = null
 
-        audioRecord?.stop()
-        audioRecord?.release()
+        // Cleanup audio resources
+        try {
+            audioRecord?.stop()
+            audioRecord?.release()
+        } catch (e: Exception) {
+            android.util.Log.e("NoiseDetection", "Error stopping audio record: ${e.message}")
+        }
         audioRecord = null
     }
 
