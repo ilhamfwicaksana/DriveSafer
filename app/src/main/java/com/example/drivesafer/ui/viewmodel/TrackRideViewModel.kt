@@ -155,10 +155,10 @@ class TrackRideViewModel(application: Application) : AndroidViewModel(applicatio
     private val SAMPLES_FOR_AVERAGE = 10
 
     // Thresholds for violations - Lebih toleran
-    private val ACCELERATION_THRESHOLD = -3.5f
-    private val BRAKE_THRESHOLD = 4.5f
-    private val TURN_THRESHOLD = 3.0f
-    private var speedLimitKmh = 50 // Configurable speed limit in km/h
+    private val ACCELERATION_THRESHOLD = -2.0f
+    private val BRAKE_THRESHOLD = 2.5f
+    private val TURN_THRESHOLD = 1.8f
+    private var speedLimitKmh = 80 // Configurable speed limit in km/h
     private val SPEED_LIMIT_MS get() = speedLimitKmh / 3.6f // Convert to m/s
 
     // NOISE THRESHOLDS
